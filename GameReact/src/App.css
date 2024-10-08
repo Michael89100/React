@@ -40,3 +40,25 @@
 .read-the-docs {
   color: #888;
 }
+
+[data-theme="dark"] #root {
+  background-color: #181818;
+  color: #f1f1f1;
+}
+
+[data-theme="dark"] .card {
+  background-color: #282828;
+  color: #f1f1f1;
+}
+
+[data-theme="dark"] .read-the-docs {
+  color: #bbb;
+}
+
+[data-theme="dark"] .logo:hover {
+  filter: drop-shadow(0 0 2em #888cffaa);
+}
+
+[data-theme="dark"] .logo.react:hover {
+  filter: drop-shadow(0 0 2em #ffffffaa);
+}

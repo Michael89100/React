@@ -7,6 +7,12 @@ module.exports = {
   theme: {
     extend: {},
   },
-  plugins: [],
+  plugins: [
+    require('daisyui'),
+  ],
+  darkMode: ['class', '[data-theme="dark"]'],
+  daisyui: {
+    themes: ["light", "dark", "cupcake"],
+  },
 }
 
