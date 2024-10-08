@@ -2,6 +2,8 @@ import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Link } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const SignupSchema = Yup.object().shape({
   firstName: Yup.string().required('Prénom requis'),
@@ -14,23 +16,53 @@ const SignupSchema = Yup.object().shape({
 });
 
 const SignupForm = ({ setIsAuthenticated }) => {
+  const registerUser = async (values) => {
+    try {
+      const response = await fetch('http://localhost:3000/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstname: values.firstName,
+          lastname: values.lastName,
+          email: values.email,
+          password: values.password,
+          username: values.email, // Assuming you're using email as the username.
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Inscription réussie ! Vous êtes maintenant connecté.');
+        setIsAuthenticated(true); // Set authentication status if registration is successful.
+      } else {
+        toast.error(`Erreur: ${data.error}`);
+      }
+    } catch (error) {
+      toast.error('Une erreur est survenue lors de l\'inscription.');
+      console.error('An error occurred:', error);
+    }
+  };
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 to-indigo-600">
-      <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-sm"> {/* Modifié la hauteur via p-6 et max-w-sm */}
+      <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-sm">
+        <ToastContainer /> {/* This is the toast container */}
         <h2 className="text-2xl font-bold text-center mb-4 text-gray-800">Inscription</h2>
         <Formik
           initialValues={{ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' }}
           validationSchema={SignupSchema}
           onSubmit={(values) => {
-            console.log('Form values:', values);
-            setIsAuthenticated(true);
+            registerUser(values);
           }}
         >
           {() => (
             <Form>
               {/* Champ Prénom */}
-              <div className="mb-3"> {/* Réduit les marges mb-3 */}
-                <label htmlFor="firstName" className="block text-md font-medium text-gray-700 mb-1">Prénom</label> {/* mb-1 réduit */}
+              <div className="mb-3">
+                <label htmlFor="firstName" className="block text-md font-medium text-gray-700 mb-1">Prénom</label>
                 <Field
                   type="text"
                   name="firstName"

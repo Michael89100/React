@@ -2,6 +2,8 @@ import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import logo from '../ressources/logo.webp';
 
 const LoginSchema = Yup.object().shape({
@@ -16,30 +18,51 @@ const LoginSchema = Yup.object().shape({
 const LoginForm = ({ onLogin }) => {
   const navigate = useNavigate();
 
-  const handleSubmit = (values) => {
-    onLogin();
-    navigate('/dashboard'); 
+  const loginUser = async (values) => {
+    try {
+      const response = await fetch('http://localhost:3000/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok & data.error === undefined) {
+        toast.success('Connexion réussie !');
+        onLogin(data.token); 
+        navigate('/dashboard'); 
+      } else {
+        toast.error(`Erreur: ${data.error}`);
+      }
+    } catch (error) {
+      toast.error('Une erreur est survenue lors de la connexion.');
+      console.error('An error occurred:', error);
+    }
   };
 
-  
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 to-indigo-600">
-      
       <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+        <ToastContainer /> {/* This is the toast container for popups */}
         <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">Connexion</h2>
 
         <div className="flex justify-center mb-6">
           <img 
-            src={logo}  // Utilisation de l'import de l'image
+            src={logo} 
             alt="Logo"
-            className="w-24 h-24"  // Ajuste la taille si nécessaire
+            className="w-24 h-24"  
           />
         </div>
 
         <Formik
           initialValues={{ email: '', password: '' }}
           validationSchema={LoginSchema}
-          onSubmit={handleSubmit}
+          onSubmit={loginUser}
         >
           {() => (
             <Form>
