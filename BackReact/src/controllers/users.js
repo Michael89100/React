@@ -133,21 +133,36 @@ export async function sendVerificationEmail (email, verificationLink) {
         },
     });
 
-    const emailTemplate = mjml2html(`
-        <mjml>
-          <mj-body>
-            <mj-section>
-              <mj-column>
-                <mj-text font-size="20px" color="#000000">Bienvenue !</mj-text>
-                <mj-text>
-                  Merci de vous être inscrit. Veuillez vérifier votre email en cliquant sur le lien ci-dessous.
-                </mj-text>
-                <mj-button href="${verificationLink}">Vérifier mon email</mj-button>
-              </mj-column>
-            </mj-section>
-          </mj-body>
-        </mjml>
-    `);
+	const emailTemplate = mjml2html(`
+		<mjml>
+		  <mj-body background-color="#f4f4f4" font-family="Helvetica, Arial, sans-serif">
+			<mj-section background-color="#ffffff" padding="20px" border-radius="8px">
+			  <mj-column>
+				<mj-text font-size="24px" color="#333333" font-weight="bold">
+				  Bienvenue chez GAME JCP ENCORE !
+				</mj-text>
+				<mj-text font-size="16px" color="#555555" padding-bottom="20px">
+				  Nous sommes ravis de vous compter parmi nous. Pour finaliser votre inscription, veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous.
+				</mj-text>
+				<mj-button href="${verificationLink}" background-color="#007BFF" color="#ffffff" font-size="16px" padding="15px 30px" border-radius="5px">
+				  Vérifier mon email
+				</mj-button>
+				<mj-text font-size="14px" color="#777777" padding-top="20px">
+				  Si vous n'avez pas créé de compte, ignorez simplement cet email.
+				</mj-text>
+			  </mj-column>
+			</mj-section>
+			<mj-section>
+			  <mj-column>
+				<mj-text font-size="12px" color="#999999" align="center" padding-top="30px">
+				  &copy; 2024 [Nom de l'Application]. Tous droits réservés.
+				</mj-text>
+			  </mj-column>
+			</mj-section>
+		  </mj-body>
+		</mjml>
+	  `);
+	  
 
     const mailOptions = {
         from: 'ton-email@gmail.com',
