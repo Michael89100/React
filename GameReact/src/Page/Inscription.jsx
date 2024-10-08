@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 const SignupSchema = Yup.object().shape({
   firstName: Yup.string().required('Prénom requis'),
   lastName: Yup.string().required('Nom requis'),
+  username: Yup.string().required('Nom d\'utilisateur requis'),
   email: Yup.string().email('Email invalide').required('Email requis'),
   password: Yup.string().min(6, 'Le mot de passe doit comporter au moins 6 caractères').required('Mot de passe requis'),
   confirmPassword: Yup.string()
@@ -28,7 +29,7 @@ const SignupForm = ({ setIsAuthenticated }) => {
           lastname: values.lastName,
           email: values.email,
           password: values.password,
-          username: values.email, // Assuming you're using email as the username.
+          username: values.username, // Le champ username est maintenant envoyé
         }),
       });
 
@@ -52,7 +53,7 @@ const SignupForm = ({ setIsAuthenticated }) => {
         <ToastContainer /> {/* This is the toast container */}
         <h2 className="text-2xl font-bold text-center mb-4 text-gray-800">Inscription</h2>
         <Formik
-          initialValues={{ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' }}
+          initialValues={{ firstName: '', lastName: '', username: '', email: '', password: '', confirmPassword: '' }}
           validationSchema={SignupSchema}
           onSubmit={(values) => {
             registerUser(values);
@@ -82,6 +83,18 @@ const SignupForm = ({ setIsAuthenticated }) => {
                   className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition duration-300 ease-in-out"
                 />
                 <ErrorMessage name="lastName" component="div" className="text-red-500 text-sm mt-1" />
+              </div>
+
+              {/* Champ Nom d'utilisateur */}
+              <div className="mb-3">
+                <label htmlFor="username" className="block text-md font-medium text-gray-700 mb-1">Nom d'utilisateur</label>
+                <Field
+                  type="text"
+                  name="username"
+                  placeholder="Nom d'utilisateur"
+                  className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition duration-300 ease-in-out"
+                />
+                <ErrorMessage name="username" component="div" className="text-red-500 text-sm mt-1" />
               </div>
 
               {/* Champ Email */}

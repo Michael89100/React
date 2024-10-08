@@ -1,5 +1,7 @@
 import User from "../models/users.js";
 import { Op } from "sequelize";
+import nodemailer from "nodemailer";
+import mjml2html from "mjml";
 
 async function generateID(id) {
 	const { count } = await findAndCountAllUsersById(id);
@@ -121,3 +123,38 @@ export async function loginUser(userDatas, app) {
 	);
 	return { token };
 }
+
+export async function sendVerificationEmail (email, verificationLink) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail', // Configure ton service email ou un SMTP personnalisé
+        auth: {
+            user: 'michaelyaromishyan@gmail.com',
+            pass: 'qtyn drmf csck jyir',
+        },
+    });
+
+    const emailTemplate = mjml2html(`
+        <mjml>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-text font-size="20px" color="#000000">Bienvenue !</mj-text>
+                <mj-text>
+                  Merci de vous être inscrit. Veuillez vérifier votre email en cliquant sur le lien ci-dessous.
+                </mj-text>
+                <mj-button href="${verificationLink}">Vérifier mon email</mj-button>
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+    `);
+
+    const mailOptions = {
+        from: 'ton-email@gmail.com',
+        to: email,
+        subject: 'Vérification de votre email',
+        html: emailTemplate.html,
+    };
+
+    await transporter.sendMail(mailOptions);
+};
