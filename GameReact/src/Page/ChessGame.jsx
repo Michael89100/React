@@ -17,21 +17,17 @@ const ChessGame = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Joindre la partie
     socket.emit('joinGame', gameId);
 
-    // Recevoir la couleur attribuée par le serveur (blanc ou noir)
     socket.on('assignColor', (color) => {
       setPlayerColor(color);
       toast.info(`Vous êtes ${color === 'w' ? 'les blancs' : 'les noirs'}.`);
     });
 
-    // Vérifier quand deux joueurs sont connectés
     socket.on('gameStarted', () => {
       setIsGameStarted(true);
     });
 
-    // Recevoir les mouvements et mettre à jour l'échiquier
     socket.on('updateBoard', (move) => {
       game.move(move);
       setFen(game.fen());
@@ -40,13 +36,11 @@ const ChessGame = () => {
   }, [gameId, game]);
 
   const onDrop = (sourceSquare, targetSquare) => {
-    // Vérifier si c'est le tour du joueur
     if ((game.turn() === 'w' && playerColor === 'b') || (game.turn() === 'b' && playerColor === 'w')) {
       toast.error("Ce n'est pas votre tour !");
       return false;
     }
 
-    // Vérifier si le joueur essaie de déplacer ses propres pièces
     const piece = game.get(sourceSquare);
     if (!piece || piece.color !== playerColor) {
       toast.error("Vous ne pouvez pas déplacer les pièces de l'adversaire !");
@@ -56,7 +50,7 @@ const ChessGame = () => {
     const move = game.move({
       from: sourceSquare,
       to: targetSquare,
-      promotion: 'q', // Promotion automatique en reine
+      promotion: 'q',
     });
 
     if (move === null) return false;
@@ -70,7 +64,7 @@ const ChessGame = () => {
     toast.info('Vous avez quitté la partie.');
     setTimeout(() => {
       navigate('/dashboard');
-    }, 2000); // Attend 2 secondes avant de rediriger vers le dashboard
+    }, 2000); 
   };
 
   return (
@@ -90,9 +84,9 @@ const ChessGame = () => {
           position={fen}
           onPieceDrop={onDrop}
           animationDuration={200}
-          boardWidth={500}  // Taille du plateau
+          boardWidth={500}
         />
-        
+
         <button
           onClick={stopGame}
           className="mt-6 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200"

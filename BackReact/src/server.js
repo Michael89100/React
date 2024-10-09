@@ -12,20 +12,18 @@ import { sequelize } from "./bdd.js";
 
 // Test de la connexion
 try {
-  sequelize.authenticate();
+  await sequelize.authenticate();
   console.log(chalk.grey("Connecté à la base de données MySQL!"));
 } catch (error) {
   console.error("Impossible de se connecter, erreur suivante :", error);
 }
 
 /**
- * API
- * avec fastify
+ * API avec fastify
  */
 let blacklistedTokens = [];
 const app = fastify();
 
-// Ajout du plugin fastify-bcrypt pour le hash du mdp
 await app
   .register(fastifyBcrypt, {
     saltWorkFactor: 12,
@@ -39,7 +37,7 @@ await app
       info: {
         title: "Documentation de l'API JDR LOTR",
         description:
-          "API développée pour un exercice avec React avec Fastify et Sequelize",
+          "API développée pour un exercice avec React, Fastify et Sequelize",
         version: "0.1.0",
       },
     },
@@ -70,10 +68,11 @@ await app
   })
   .register(fastifyJWT, {
     secret: "unanneaupourlesgouvernertous",
-  }).register(socketioServer, {
-	cors: {
-	  origin: "*",
-	},
+  })
+  .register(socketioServer, {
+    cors: {
+      origin: "*",
+    },
   });
 
 /**********
@@ -98,13 +97,68 @@ app.decorate("authenticate", async (request, reply) => {
   }
 });
 
-// gestion utilisateur
+// Gestion utilisateur
 usersRoutes(app, blacklistedTokens);
-// gestion des jeux
+// Gestion des jeux
 gamesRoutes(app);
 
 /**********
  * Intégration de Socket.IO
+ **********/
+
+let games = {}; // Stocker les parties créées
+
+app.io.on("connection", (socket) => {
+  console.log(`Nouvelle connexion : ${socket.id}`);
+
+  // Gestion de la création d'une nouvelle partie
+  socket.on("createGame", () => {
+    const gameId = Math.random().toString(36).substr(2, 9); // Génération d'un ID unique
+    games[gameId] = { players: [socket.id], board: null }; // Ajouter la partie
+    socket.join(gameId); // Le joueur rejoint la salle de la partie
+    socket.emit("gameCreated", gameId); // Informer le joueur de la création de la partie
+    app.io.emit("updateGamesList", games); // Informer tous les clients de la mise à jour des parties
+  });
+
+  // Gestion de la connexion à une partie existante
+  socket.on("joinGame", (gameId) => {
+    if (games[gameId] && games[gameId].players.length === 1) {
+      games[gameId].players.push(socket.id); // Ajouter le joueur à la partie
+      socket.join(gameId); // Le joueur rejoint la salle de la partie
+      app.io.in(gameId).emit("gameStarted"); // Informer que la partie a commencé
+      app.io.emit("updateGamesList", games); // Mettre à jour la liste des parties disponibles
+    } else {
+      socket.emit("error", "Jeu non disponible ou déjà en cours.");
+    }
+  });
+
+  // Gestion des mouvements de pièces
+  socket.on("movePiece", (data) => {
+    const { gameId, move } = data;
+    if (games[gameId]) {
+      app.io.in(gameId).emit("updateBoard", move); // Transmettre le mouvement aux joueurs dans la salle
+    }
+  });
+
+  // Gestion de la déconnexion d'un joueur
+  socket.on("disconnect", () => {
+    console.log(`Joueur déconnecté : ${socket.id}`);
+    // Supprimer les joueurs déconnectés des parties
+    for (const gameId in games) {
+      const game = games[gameId];
+      if (game.players.includes(socket.id)) {
+        game.players = game.players.filter((playerId) => playerId !== socket.id);
+        if (game.players.length === 0) {
+          delete games[gameId]; // Suppression de la partie si plus de joueurs
+        }
+      }
+    }
+    app.io.emit("updateGamesList", games); // Mise à jour de la liste des parties après déconnexion
+  });
+});
+
+/**********
+ * Démarrer le serveur
  **********/
 const startServer = async () => {
   try {
@@ -114,59 +168,12 @@ const startServer = async () => {
         console.log(chalk.green("Base de données synchronisée."));
       })
       .catch((error) => {
-        console.error(
-          "Erreur de synchronisation de la base de données :",
-          error
-        );
+        console.error("Erreur de synchronisation de la base de données :", error);
       });
 
     const server = await app.listen({ port: 3000, host: '0.0.0.0' });
-    console.log(
-      "Serveur Fastify lancé sur " + chalk.blue("http://localhost:3000")
-    );
-
-    // Création de l'instance Socket.IO liée à Fastify
-    
-
-    let games = {};
-
-    app.io.on("connection", (socket) => {
-      console.log(`Nouvelle connexion : ${socket.id}`);
-
-      // Gestion de la création d'une nouvelle partie
-      socket.on("createGame", () => {
-        const gameId = Math.random().toString(36).substr(2, 9);
-        games[gameId] = { players: [socket.id], board: null };
-        socket.join(gameId);
-        socket.emit("gameCreated", gameId);
-      });
-
-      // Gestion de la connexion à une partie existante
-      socket.on("joinGame", (gameId) => {
-        if (games[gameId] && games[gameId].players.length === 1) {
-          games[gameId].players.push(socket.id);
-          socket.join(gameId);
-          app.io.in(gameId).emit("gameStarted");
-        } else {
-          socket.emit("error", "Jeu non disponible ou déjà en cours.");
-        }
-      });
-
-      socket.on("movePiece", (data) => {
-        const { gameId, move } = data;
-        app.io.in(gameId).emit("updateBoard", move);
-      });
-
-      socket.on("disconnect", () => {
-        console.log(`Joueur déconnecté : ${socket.id}`);
-      });
-    });
-
-    console.log(
-      chalk.bgYellow(
-        "Accéder à la documentation sur http://localhost:3000/documentation"
-      )
-    );
+    console.log("Serveur Fastify lancé sur " + chalk.blue("http://localhost:3000"));
+    console.log(chalk.bgYellow("Accéder à la documentation sur http://localhost:3000/documentation"));
   } catch (err) {
     console.log(err);
     process.exit(1);
