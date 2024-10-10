@@ -114,7 +114,7 @@ app.io.on("connection", (socket) => {
   // Gestion de la création d'une nouvelle partie
   socket.on("createGame", () => {
     const gameId = Math.random().toString(36).substr(2, 9); // Génération d'un ID unique
-    games[gameId] = { players: [socket.id], board: null }; // Ajouter la partie
+    games[gameId] = { players: new Set([socket.id]), board: null }; // Ajouter la partie
     socket.join(gameId); // Le joueur rejoint la salle de la partie
     socket.emit("gameCreated", gameId); // Informer le joueur de la création de la partie
     app.io.emit("updateGamesList", games); // Informer tous les clients de la mise à jour des parties
@@ -122,8 +122,10 @@ app.io.on("connection", (socket) => {
 
   // Gestion de la connexion à une partie existante
   socket.on("joinGame", (gameId) => {
-    if (games[gameId] && games[gameId].players.length === 1) {
-      games[gameId].players.push(socket.id); // Ajouter le joueur à la partie
+	console.log(gameId, games, games[gameId].players);
+	
+    if (games[gameId] && games[gameId].players.size === 1) {
+      games[gameId].players.add(socket.id); // Ajouter le joueur à la partie
       socket.join(gameId); // Le joueur rejoint la salle de la partie
       app.io.in(gameId).emit("gameStarted"); // Informer que la partie a commencé
       app.io.emit("updateGamesList", games); // Mettre à jour la liste des parties disponibles
@@ -147,7 +149,7 @@ app.io.on("connection", (socket) => {
     for (const gameId in games) {
       const game = games[gameId];
       if (game.players.includes(socket.id)) {
-        game.players = game.players.filter((playerId) => playerId !== socket.id);
+        game.players = Array.from(game.players).filter((playerId) => playerId !== socket.id);
         if (game.players.length === 0) {
           delete games[gameId]; // Suppression de la partie si plus de joueurs
         }
