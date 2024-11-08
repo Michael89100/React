@@ -1,5 +1,4 @@
-// App.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import LoginForm from './Page/Connexion';
 import SignupForm from './Page/Inscription';
@@ -10,10 +9,19 @@ import ChessGame from './Page/ChessGame';
 import { SocketProvider } from './Page/SocketContext';  
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    // Vérifier localStorage au chargement initial
+    return localStorage.getItem('isAuthenticated') === 'true';
+  });
+
+  useEffect(() => {
+    // Mettre à jour localStorage lorsque isAuthenticated change
+    localStorage.setItem('isAuthenticated', isAuthenticated);
+  }, [isAuthenticated]);
 
   const handleLogout = () => {
     setIsAuthenticated(false); 
+    localStorage.removeItem('isAuthenticated'); // Supprimer la persistance lors de la déconnexion
   };
 
   const handleLogin = () => {

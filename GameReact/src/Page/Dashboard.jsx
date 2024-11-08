@@ -1,4 +1,3 @@
-// Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../Page/SocketContext';  
@@ -13,21 +12,25 @@ const Dashboard = () => {
   const socket = useSocket();  
 
   useEffect(() => {
+    // Register event listeners once when the component mounts
     socket.on('updateGamesList', (games) => {
       setGamesList(Object.keys(games));
     });
 
+    socket.on('gameCreated', (gameId) => {
+      setCreatedGameId(gameId);
+      toast.success(`Partie créée avec l'ID : ${gameId}`);
+    });
+
     return () => {
+      // Clean up event listeners when the component unmounts
       socket.off('updateGamesList');
+      socket.off('gameCreated');
     };
   }, [socket]);
 
   const createGame = () => {
     socket.emit('createGame');
-    socket.on('gameCreated', (gameId) => {
-      setCreatedGameId(gameId);
-      toast.success(`Partie créée avec l'ID : ${gameId}`);
-    });
   };
 
   const joinGame = () => {
