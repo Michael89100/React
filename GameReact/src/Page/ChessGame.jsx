@@ -1,20 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Chessboard } from 'react-chessboard';
-import io from 'socket.io-client';
+import { useSocket } from '../Page/SocketContext';
 import { Chess } from 'chess.js';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-const socket = io('http://localhost:3000');
 
 const ChessGame = () => {
   const { gameId } = useParams();
   const [game, setGame] = useState(new Chess());
   const [fen, setFen] = useState(game.fen());
-  const [playerColor, setPlayerColor] = useState(null); // Couleur du joueur
-  const [isGameStarted, setIsGameStarted] = useState(false); // Partie démarrée ou non
+  const [playerColor, setPlayerColor] = useState(null); 
+  const [isGameStarted, setIsGameStarted] = useState(false); 
   const navigate = useNavigate();
+  const socket = useSocket();  
 
   useEffect(() => {
     socket.emit('joinGame', gameId);
@@ -32,18 +31,17 @@ const ChessGame = () => {
       game.move(move);
       setFen(game.fen());
     });
-
-  }, [gameId, game]);
+  
+    return () => {
+      socket.off('assignColor');
+      socket.off('gameStarted');
+      socket.off('updateBoard');
+    };
+  }, [gameId, game, socket]);
 
   const onDrop = (sourceSquare, targetSquare) => {
     if ((game.turn() === 'w' && playerColor === 'b') || (game.turn() === 'b' && playerColor === 'w')) {
       toast.error("Ce n'est pas votre tour !");
-      return false;
-    }
-
-    const piece = game.get(sourceSquare);
-    if (!piece || piece.color !== playerColor) {
-      toast.error("Vous ne pouvez pas déplacer les pièces de l'adversaire !");
       return false;
     }
 
@@ -66,35 +64,22 @@ const ChessGame = () => {
       navigate('/dashboard');
     }, 2000); 
   };
-
+ console.log("playerColor", playerColor);
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white relative">
-      <div className="absolute top-4 left-4 text-sm text-gray-600 dark:text-gray-300">
-        Partie d'échecs : {gameId}
-      </div>
-
-      {!isGameStarted && (
-        <div className="mb-4 text-xl text-gray-800 dark:text-gray-300">
-          En attente d'un deuxième joueur...
-        </div>
-      )}
-
-      <div className="flex flex-col items-center">
-        <Chessboard
-          position={fen}
-          onPieceDrop={onDrop}
-          animationDuration={200}
-          boardWidth={500}
-        />
-
-        <button
-          onClick={stopGame}
-          className="mt-6 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200"
-        >
-          Arrêter la partie
-        </button>
-      </div>
-
+      <Chessboard
+        position={fen}
+        onPieceDrop={onDrop}
+        animationDuration={200}
+        boardOrientation={playerColor === 'b' ? 'black' : 'white'} 
+        boardWidth={500}
+      />
+      <button
+        onClick={stopGame}
+        className="mt-6 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200"
+      >
+        Arrêter la partie
+      </button>
       <ToastContainer position="top-center" autoClose={2000} />
     </div>
   );

@@ -1,29 +1,27 @@
+// Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import io from 'socket.io-client';
+import { useSocket } from '../Page/SocketContext';  
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const socket = io('http://localhost:3000'); // Connexion au serveur Socket.IO
-
 const Dashboard = () => {
-  const [gameId, setGameId] = useState(''); // ID de la partie à rejoindre
-  const [createdGameId, setCreatedGameId] = useState(''); // ID de la partie créée
-  const [gamesList, setGamesList] = useState([]); // Liste des parties créées
+  const [gameId, setGameId] = useState(''); 
+  const [createdGameId, setCreatedGameId] = useState(''); 
+  const [gamesList, setGamesList] = useState([]); 
   const navigate = useNavigate();
+  const socket = useSocket();  
 
-  // Récupérer la liste des parties disponibles depuis le serveur
   useEffect(() => {
     socket.on('updateGamesList', (games) => {
-      setGamesList(Object.keys(games)); // Récupérer les IDs des parties
+      setGamesList(Object.keys(games));
     });
 
     return () => {
-      socket.off('updateGamesList'); // Nettoyage de l'écouteur lors du démontage
+      socket.off('updateGamesList');
     };
-  }, []);
+  }, [socket]);
 
-  // Créer une nouvelle partie
   const createGame = () => {
     socket.emit('createGame');
     socket.on('gameCreated', (gameId) => {
@@ -32,15 +30,14 @@ const Dashboard = () => {
     });
   };
 
-  // Rejoindre une partie existante
   const joinGame = () => {
     if (gameId) {
       socket.emit('joinGame', gameId);
       socket.on('gameStarted', () => {
-        navigate(`/game/${gameId}`); // Redirige vers l'interface de jeu
+        navigate(`/game/${gameId}`);
       });
       socket.on('error', (errorMessage) => {
-        toast.error(errorMessage); // Afficher une erreur si la partie est inaccessible
+        toast.error(errorMessage);
       });
     } else {
       toast.error('Veuillez entrer un ID de partie pour rejoindre.');
