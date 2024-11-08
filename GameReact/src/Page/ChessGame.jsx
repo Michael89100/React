@@ -64,23 +64,26 @@ const ChessGame = () => {
       navigate('/dashboard');
     }, 2000); 
   };
- console.log("playerColor", playerColor);
+
+  console.log("playerColor", playerColor);
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white relative">
-      <Chessboard
-        position={fen}
-        onPieceDrop={onDrop}
-        animationDuration={200}
-        boardOrientation={playerColor === 'b' ? 'black' : 'white'} 
-        boardWidth={500}
-      />
-      <button
-        onClick={stopGame}
-        className="mt-6 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200"
-      >
-        Arrêter la partie
-      </button>
-      <ToastContainer position="top-center" autoClose={2000} />
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white">
+      <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+        <Chessboard
+          position={fen}
+          onPieceDrop={onDrop}
+          animationDuration={200}
+          boardOrientation={playerColor === 'b' ? 'black' : 'white'} 
+          boardWidth={600}
+        />
+        <button
+          onClick={stopGame}
+          className="mt-6 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200"
+        >
+          Arrêter la partie
+        </button>
+        <ToastContainer position="top-center" autoClose={2000} />
+      </div>
     </div>
   );
 };
