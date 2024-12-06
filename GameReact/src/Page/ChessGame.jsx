@@ -31,7 +31,6 @@ const ChessGame = () => {
 
       const handleAssignColor = (color) => {
         setPlayerColor(color);
-        toast.info(`Vous êtes ${color === 'w' ? 'les blancs' : 'les noirs'}.`);
       };
 
       const handleGameStarted = () => {
