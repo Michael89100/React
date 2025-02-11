@@ -5,8 +5,7 @@ import io from 'socket.io-client';
 const SocketContext = createContext();
 
 export const SocketProvider = ({ children }) => {
-  const socket = useMemo(() => io('https://react-17nc.onrender.com'), []);
-  //const socket = useMemo(() => io('http://localhost:3000'), []);  
+  const socket = useMemo(() => io('http://localhost:3000'), []);  
 
   useEffect(() => {
     return () => {
