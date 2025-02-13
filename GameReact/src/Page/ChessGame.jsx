@@ -11,7 +11,6 @@ const ChessGame = () => {
   const navigate = useNavigate();
   const socket = useSocket();
 
-  // Création d'une instance de chess.js (mutable)
   const [game] = useState(new Chess());
   const [fen, setFen] = useState(game.fen());
   const [playerColor, setPlayerColor] = useState(null);
@@ -28,12 +27,6 @@ const ChessGame = () => {
     q: 9  // Dame
   };
 
-  /**
-   * Calcule le score en parcourant l'historique des coups (verbose)
-   * pour chaque coup ayant une pièce capturée.
-   * Le joueur qui effectue le coup se voit attribuer la valeur
-   * de la pièce capturée.
-   */
   const calculateScore = () => {
     const history = game.history({ verbose: true });
     let whiteScore = 0;
@@ -51,19 +44,13 @@ const ChessGame = () => {
     return { white: whiteScore, black: blackScore };
   };
 
-  /**
-   * Met à jour le score sur l'interface en recalculant
-   * l'historique des coups, et émet cet updated score par Socket.IO.
-   */
   const updateScoreState = () => {
     const newScore = calculateScore();
     setScore(newScore);
-    // Transmission du score mis à jour aux autres joueurs
     socket.emit('scoreUpdate', newScore);
   };
 
   useEffect(() => {
-    // Une fois la couleur sélectionnée, rejoindre la partie via Socket.IO
     if (!showColorSelection) {
       socket.emit('joinGame', gameId);
 
@@ -75,14 +62,12 @@ const ChessGame = () => {
         setIsGameStarted(true);
       };
 
-      // Lorsqu'un coup est diffusé par le serveur, l'ajouter au jeu et recalculer le score
       const handleUpdateBoard = (move) => {
         game.move(move);
         setFen(game.fen());
         updateScoreState();
       };
 
-      // Réception d'un score mis à jour
       const handleScoreUpdate = (updatedScore) => {
         setScore(updatedScore);
       };
@@ -102,7 +87,6 @@ const ChessGame = () => {
   }, [gameId, game, socket, showColorSelection]);
 
   const onDrop = (sourceSquare, targetSquare) => {
-    // Contrôle du tour de jeu : interdire le coup si ce n'est pas le tour du joueur
     if ((game.turn() === 'w' && playerColor === 'b') || (game.turn() === 'b' && playerColor === 'w')) {
       toast.error("Ce n'est pas votre tour !");
       return false;
@@ -119,7 +103,7 @@ const ChessGame = () => {
     setFen(game.fen());
     updateScoreState();
 
-    // Diffuser le coup réalisé à tous les joueurs dans la salle de jeu
+  
     socket.emit('movePiece', { gameId, move });
     return true;
   };
