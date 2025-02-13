@@ -8,24 +8,62 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const ChessGame = () => {
   const { gameId } = useParams();
-  const [game, setGame] = useState(new Chess());
+  const navigate = useNavigate();
+  const socket = useSocket();
+
+  // Création d'une instance de chess.js (mutable)
+  const [game] = useState(new Chess());
   const [fen, setFen] = useState(game.fen());
   const [playerColor, setPlayerColor] = useState(null);
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [score, setScore] = useState({ white: 0, black: 0 });
   const [showColorSelection, setShowColorSelection] = useState(true);
-  const navigate = useNavigate();
-  const socket = useSocket();
 
+  // Valeurs attribuées à chaque type de pièce
   const pieceValues = {
-    p: 1, // Pawn
-    n: 3, // Knight
-    b: 3, // Bishop
-    r: 5, // Rook
-    q: 9  // Queen
+    p: 1, // Pion
+    n: 3, // Cavalier
+    b: 3, // Fou
+    r: 5, // Tour
+    q: 9  // Dame
+  };
+
+  /**
+   * Calcule le score en parcourant l'historique des coups (verbose)
+   * pour chaque coup ayant une pièce capturée.
+   * Le joueur qui effectue le coup se voit attribuer la valeur
+   * de la pièce capturée.
+   */
+  const calculateScore = () => {
+    const history = game.history({ verbose: true });
+    let whiteScore = 0;
+    let blackScore = 0;
+    history.forEach(move => {
+      if (move.captured) {
+        const capturedVal = pieceValues[move.captured.toLowerCase()] || 0;
+        if (move.color === 'w') {
+          whiteScore += capturedVal;
+        } else {
+          blackScore += capturedVal;
+        }
+      }
+    });
+    return { white: whiteScore, black: blackScore };
+  };
+
+  /**
+   * Met à jour le score sur l'interface en recalculant
+   * l'historique des coups, et émet cet updated score par Socket.IO.
+   */
+  const updateScoreState = () => {
+    const newScore = calculateScore();
+    setScore(newScore);
+    // Transmission du score mis à jour aux autres joueurs
+    socket.emit('scoreUpdate', newScore);
   };
 
   useEffect(() => {
+    // Une fois la couleur sélectionnée, rejoindre la partie via Socket.IO
     if (!showColorSelection) {
       socket.emit('joinGame', gameId);
 
@@ -37,23 +75,23 @@ const ChessGame = () => {
         setIsGameStarted(true);
       };
 
+      // Lorsqu'un coup est diffusé par le serveur, l'ajouter au jeu et recalculer le score
       const handleUpdateBoard = (move) => {
-        updateScores(move);
         game.move(move);
         setFen(game.fen());
+        updateScoreState();
       };
 
+      // Réception d'un score mis à jour
       const handleScoreUpdate = (updatedScore) => {
         setScore(updatedScore);
       };
 
-      // Register event listeners
       socket.on('assignColor', handleAssignColor);
       socket.on('gameStarted', handleGameStarted);
       socket.on('updateBoard', handleUpdateBoard);
       socket.on('scoreUpdate', handleScoreUpdate);
 
-      // Cleanup event listeners on unmount
       return () => {
         socket.off('assignColor', handleAssignColor);
         socket.off('gameStarted', handleGameStarted);
@@ -63,21 +101,8 @@ const ChessGame = () => {
     }
   }, [gameId, game, socket, showColorSelection]);
 
-  const updateScores = (move) => {
-    if (move.captured) {
-      const pieceValue = pieceValues[move.captured.toLowerCase()] || 0;
-      const newScore = { ...score };
-      if (move.color === 'w') {
-        newScore.black += pieceValue;
-      } else {
-        newScore.white += pieceValue;
-      }
-      setScore(newScore);
-      socket.emit('scoreUpdate', newScore);
-    }
-  };
-
   const onDrop = (sourceSquare, targetSquare) => {
+    // Contrôle du tour de jeu : interdire le coup si ce n'est pas le tour du joueur
     if ((game.turn() === 'w' && playerColor === 'b') || (game.turn() === 'b' && playerColor === 'w')) {
       toast.error("Ce n'est pas votre tour !");
       return false;
@@ -86,13 +111,15 @@ const ChessGame = () => {
     const move = game.move({
       from: sourceSquare,
       to: targetSquare,
-      promotion: 'q',
+      promotion: 'q'
     });
 
     if (move === null) return false;
 
-    updateScores(move);
     setFen(game.fen());
+    updateScoreState();
+
+    // Diffuser le coup réalisé à tous les joueurs dans la salle de jeu
     socket.emit('movePiece', { gameId, move });
     return true;
   };
@@ -149,8 +176,12 @@ const ChessGame = () => {
           </div>
           <div className="flex flex-col p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg w-64">
             <h2 className="text-2xl font-bold mb-4 text-center">Score</h2>
-            <div className="text-lg mb-2">Blancs : <span className="font-semibold">{score.white}</span></div>
-            <div className="text-lg">Noirs : <span className="font-semibold">{score.black}</span></div>
+            <div className="text-lg mb-2">
+              Blancs : <span className="font-semibold">{score.white}</span>
+            </div>
+            <div className="text-lg">
+              Noirs : <span className="font-semibold">{score.black}</span>
+            </div>
           </div>
         </div>
       )}
