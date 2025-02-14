@@ -8,6 +8,7 @@ const Dashboard = () => {
   const [gameId, setGameId] = useState(''); 
   const [createdGameId, setCreatedGameId] = useState(''); 
   const [gamesList, setGamesList] = useState([]); 
+  const [scores, setScores] = useState([]);
   const navigate = useNavigate();
   const socket = useSocket();  
 
@@ -22,10 +23,15 @@ const Dashboard = () => {
       toast.success(`Partie créée avec l'ID : ${gameId}`);
     });
 
+    socket.on('updateScores', (newScores) => {
+      setScores(newScores);
+    });
+
     return () => {
       // Clean up event listeners when the component unmounts
       socket.off('updateGamesList');
       socket.off('gameCreated');
+      socket.off('updateScores');
     };
   }, [socket]);
 
@@ -94,6 +100,21 @@ const Dashboard = () => {
               gamesList.map((game, index) => (
                 <li key={index} className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg shadow-sm transform hover:scale-105 transition duration-200">
                   Partie ID: {game}
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+
+        <div className="flex flex-col items-center space-y-4 p-8 bg-white dark:bg-gray-800 shadow-xl rounded-lg transform hover:scale-105 transition duration-300 ease-in-out">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Tableau des Scores</h2>
+          <ul className="w-full list-none space-y-2">
+            {scores.length === 0 ? (
+              <li className="text-gray-600 dark:text-gray-400">Aucun score disponible.</li>
+            ) : (
+              scores.map((score, index) => (
+                <li key={index} className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg shadow-sm transform hover:scale-105 transition duration-200">
+                  {score.username}: {score.points} points
                 </li>
               ))
             )}
