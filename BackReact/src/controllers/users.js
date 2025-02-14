@@ -129,7 +129,7 @@ export async function sendVerificationEmail (email, verificationLink) {
         service: 'gmail', // Configure ton service email ou un SMTP personnalisé
         auth: {
             user: 'michaelyaromishyan@gmail.com',
-            pass: 'qtyn drmf csck jyir',
+            pass: 'zmfh zyqf oqrw fctp',
         },
     });
 
