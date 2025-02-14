@@ -165,7 +165,7 @@ export async function sendVerificationEmail (email, verificationLink) {
 	  
 
     const mailOptions = {
-        from: 'ton-email@gmail.com',
+        from: 'michaelyaromishyan@gmail.com',
         to: email,
         subject: 'Vérification de votre email',
         html: emailTemplate.html,
